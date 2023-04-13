@@ -1,22 +1,51 @@
-from anytree import Node, RenderTree
+# NOTE: Need to pip install treelib
+import treelib
 
-# define a dictionary of materialized views
-mviews = {
-    "mv1": {"source": "table1", "columns": ["col1", "col2", "col3"]},
-    "mv2": {"source": "table2", "columns": ["col4", "col5"]},
-    "mv3": {"source": "mv1 JOIN mv2 ON mv1.col1 = mv2.col4", "columns": ["col1", "col2", "col3", "col4", "col5"]}
-}
+def create_balanced_tree(nodes):
+    """
+    Creates a balanced binary tree with assigned IDs from a list of nodes.
+    """
+    # Create an empty tree
+    tree = treelib.Tree()
 
-# create the root node
-root = Node("Materialized Views")
+    # Calculate the index of the middle element
+    mid = len(nodes) // 2
 
-# create a child node for each materialized view
-for name, properties in mviews.items():
-    view_node = Node(name, parent=root, source=properties["source"], columns=properties["columns"])
+    # Add the middle element as the root node
+    root_id = nodes[mid]
+    tree.create_node(root_id, root_id)
 
-# print the tree
-for pre, fill, node in RenderTree(root):
-    print("%s%s" % (pre, node.name))
-    if node.is_leaf:
-        print("%s Source: %s" % (fill, node.source))
-        print("%s Columns: %s" % (fill, node.columns))
+    # Recursively add the left and right subtrees
+    add_subtree(tree, nodes[:mid], root_id, "left")
+    add_subtree(tree, nodes[mid+1:], root_id, "right")
+
+    return tree
+
+def add_subtree(tree, nodes, parent_id, direction):
+    """
+    Recursively adds a subtree to the parent node.
+    """
+    if not nodes:
+        return
+
+    # Calculate the index of the middle element
+    mid = len(nodes) // 2
+
+    # Add the middle element as a child node
+    child_id = nodes[mid]
+    # Needs to be a string!
+    child_id_with_direction = parent_id + direction + '_' + str(child_id)
+    tree.create_node(child_id, child_id_with_direction, parent=parent_id)
+
+    # Recursively add the left and right subtrees
+    add_subtree(tree, nodes[:mid], child_id_with_direction, "left")
+    add_subtree(tree, nodes[mid+1:], child_id_with_direction, "right")
+
+# Each node in the tree should represent a materialized view
+nodes = ["SELECT * FROM TABLEA", "SELECT * FROM TABLEB"]
+tree = create_balanced_tree(nodes)
+tree.show()
+
+# TODO: Use dynamic programming to traverse the materialized view tree and choose the optimal one
+
+# After getting the optimal one from the tree, execute the materialized view???
