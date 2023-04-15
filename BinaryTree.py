@@ -25,32 +25,28 @@ def set_metadata(id, mv_name):
     # we want to get the size of each mv, frequency of each update, and estimation for execution cost of the material view
     '''
     # TODO: calculate the size of each mv
+    # https://stackoverflow.com/questions/62589909/how-to-get-the-size-of-a-materialized-view-in-oracle
+    # Or use ESTIMATE_MVIEW_SIZE procedure: https://docs.oracle.com/database/121/ARPLS/d_mview.htm#ARPLS67189
     cursor = connection.cursor()
     cursor.execute("SELECT owner, segment_name, bytes FROM dba_segments WHERE segment_name = 'TODO: can we put variables in here: mv_name' AND segment_type = 'MATERIALIZED VIEW'") 
     size_data = cursor.fetchone()
     size = size_data[2]
     
     # TODO: calculate the frequency of updates
-    # Get the 
-    cursor.execute("SELECT last_refresh_date FROM user_mviews WHERE mview_name = 'TODO: insert mv name'");
+    # Get the last refresh date: https://stackoverflow.com/questions/5798894/materialized-views-identifying-the-last-refresh
+    cursor.execute("SELECT owner, mview_name, last_refresh_date FROM all_mviews WHERE mview_name = 'TODO: insert mv name'");
     freq_data = cursor.fetchone()
-    temp_freq = freq_data[0]
+    temp_freq = freq_data[2]
 
-    # calculate frequency of updates: current time - last_refresh_date
+    # calculate frequency of updates formula: current time - last_refresh_date => convert to # of days then do 1/#of days to get frequency of updates
     time_elapsed = datetime.datetime.now() - temp_freq
     days_elapsed = time_elapsed.days
     frequency = 1.0 / days_elapsed
 
-    # TODO: Estimate the cost of executing a materialized view
-    cursor.execute("BEGIN DBMS_MVIEW.EXPLAIN_MVIEW('TODO: INSERT NAME OF MV HERE '); END;")
-    statistics = cursor.fetchall()
-
-    # Extract execution statistics: cost is estimated cost of executing the mv, cardinality is the estimated number of rows returned by the mv
-    for row in statistics:
-        if row[0] == 'Cost':
-            cost = row[1]
-        elif row[0] == 'Cardinality':
-            num_rows = row[1]
+    # TODO: Estimate the cost of executing a materialized view -> or get rid of this and get the actual time once we choose an optimal mv. Because in theory, less search space = improved time
+    does oracle db have an execution timer for cpu or i/o????
+    # DBMS_XPLAN.DISPLAY: https://docs.oracle.com/database/121/ARPLS/d_xplan.htm#ARPLS378
+    # Uses an estimated cost of each step in the query plan calculated by the Oracle-Cost-Based Optimizer expressed in arbitrary units.
     '''
     size = 0
     frequency = 0
@@ -139,16 +135,7 @@ def find_optimal_node(tree):
             current_child = traverse(child, min_cost_node)
             #print("current child is " + str(current_child.identifier) + " cost: " + str(current_child.data.cost))
 
-            # TODO: Which option for weights do we want?
-            # Choice 1: Update minimum cost node if this is the first child or if this child has a lower cost
-            '''
-            if min_cost_node is None or (current_child.data.cost <= min_cost_node.data.cost and
-                                         current_child.data.size <= min_cost_node.data.size and
-                                         current_child.data.frequency <= min_cost_node.data.frequency):
-                min_cost_node = current_child
-            '''
-
-            # Choice 2: Choose node with the smallest sum of all the weights
+            # Choose the node with the smallest sum of all the weights
             if min_cost_node is None or (current_child.data.cost + current_child.data.size + current_child.data.frequency <= min_cost_node.data.cost + min_cost_node.data.size + min_cost_node.data.frequency):
                 min_cost_node = current_child
         
