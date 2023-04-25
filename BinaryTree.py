@@ -4,161 +4,184 @@
 #                   Input: List of materialized views of a given query
 #                   Output: Optimal materialized view
 
-# You will need to `pip install treelib` if you haven't gotten it installed yet
-import treelib
-import datetime
+#import mysql.connector
+from time import time
 
-# Keeps track of the weights in each materialized view
-class metadata(object):
-    def __init__(self, id, size, frequency, cost):
-        self.id = id
-        self.size = size # size of the materialized view (mv)
-        self.frequency = frequency # frequency of updates on each mv
-        self.cost = cost # Estimated query execution cost on each mv
+'''
+mydb = mysql.connector.connect(
+  host="localhost",
+  user="root",
+  password="Vista@701",
+  database="testing"
+)
+mycursor = mydb.cursor()
+tic = time()
+mycursor.execute("SELECT name FROM 2011_rankings where scores_international_outlook > 20 ")
+results = mycursor.fetchall()
+toc = time()
+print('M1 ' + str(toc - tic))
+M1=[]
+M1T=toc - tic
+# Print the results
+for result in results:
+  M1+=[result]
 
-# TODO: a function that finds the weights for each mv
-# Input: id - is the index of the mv in the Input list all the way at the bottom
-#       mv_name - the materialized view name in a string format
-def set_metadata(id, mv_name):
+tic2 = time()
+mycursor.execute("SELECT name FROM 2011_rankings WHERE scores_international_outlook > 20 ORDER BY RAND(); ")
+result2 = mycursor.fetchall()
+toc2 = time()
+print('M2 ' + str(toc2 - tic2))
+M2T=toc2 - tic2
 
-    # CODE COMMENTED BELOW IS NOT TESTED: 
-    # we want to get the size of each mv, frequency of each update, and estimation for execution cost of the material view
-    '''
-    # TODO: calculate the size of each mv
-    # https://stackoverflow.com/questions/62589909/how-to-get-the-size-of-a-materialized-view-in-oracle
-    # Or use ESTIMATE_MVIEW_SIZE procedure: https://docs.oracle.com/database/121/ARPLS/d_mview.htm#ARPLS67189
-    cursor = connection.cursor()
-    cursor.execute("SELECT owner, segment_name, bytes FROM dba_segments WHERE segment_name = 'TODO: can we put variables in here: mv_name' AND segment_type = 'MATERIALIZED VIEW'") 
-    size_data = cursor.fetchone()
-    size = size_data[2]
-    
-    # TODO: calculate the frequency of updates
-    # Get the last refresh date: https://stackoverflow.com/questions/5798894/materialized-views-identifying-the-last-refresh
-    cursor.execute("SELECT owner, mview_name, last_refresh_date FROM all_mviews WHERE mview_name = 'TODO: insert mv name'");
-    freq_data = cursor.fetchone()
-    temp_freq = freq_data[2]
+M2=[]
+# Print the results
+for result in result2:
+  M2+=[result]
+tic3 = time()
+mycursor.execute("SELECT name FROM 2011_rankings WHERE scores_international_outlook > 20 ORDER BY name; ")
+result3 = mycursor.fetchall()
+toc3 = time()
+M3T=toc3 - tic3
 
-    # calculate frequency of updates formula: current time - last_refresh_date => convert to # of days then do 1/#of days to get frequency of updates
-    time_elapsed = datetime.datetime.now() - temp_freq
-    days_elapsed = time_elapsed.days
-    frequency = 1.0 / days_elapsed
+print('M3 ' + str(toc3 - tic3))
+M3=[]
+# Print the results
+for result in result3:
+  M3+=[result]
+tic4 = time()
+mycursor.execute("SELECT name FROM 2011_rankings WHERE scores_international_outlook > 20 group by location; ")
+result4 = mycursor.fetchall()
+toc4 = time()
+M4T=toc4 - tic4
 
-    # TODO: Estimate the cost of executing a materialized view -> or get rid of this and get the actual time once we choose an optimal mv. Because in theory, less search space = improved time
-    does oracle db have an execution timer for cpu or i/o????
-    # DBMS_XPLAN.DISPLAY: https://docs.oracle.com/database/121/ARPLS/d_xplan.htm#ARPLS378
-    # Uses an estimated cost of each step in the query plan calculated by the Oracle-Cost-Based Optimizer expressed in arbitrary units.
-    '''
-    size = 0
-    frequency = 0
-    cost = 0
+print('M4 ' + str(toc4 - tic4))
+M4=[]
+# Print the results
+for result in result4:
+  M4+=[result]
+tic5 = time()
+mycursor.execute("SELECT name FROM 2011_rankings WHERE scores_international_outlook > 20 group by aliases; ")
 
-    return metadata(id, size, frequency, cost)
+result5 = mycursor.fetchall()
 
-def create_balanced_tree(nodes):
-    """
-    Creates a balanced binary tree with assigned IDs from a list of nodes.
-    """
-    # Create an empty tree
-    tree = treelib.Tree()
+toc5 = time()
+print('M5 ' + str(toc5 - tic5))
+M5T=toc5 - tic5
 
-    # Calculate the index of the middle element
-    mid = len(nodes) // 2
+M5=[]
+# Print the results
+for result in result5:
+  M5+=[result]
 
-    # Add the middle element as the root node
-    root_id = nodes[mid]
-    # TODO: check to make sure metadata matches!
-    root_metadata = set_metadata(mid, root_id)
-    tree.create_node(root_id, root_id, data = root_metadata)
+tic6 = time()
+mycursor.execute("SELECT name FROM 2011_rankings WHERE scores_international_outlook > 20 order by rank_order; ")
+result6 = mycursor.fetchall()
+toc6 = time()
+print('M6 ' + str(toc6 - tic6))
+M6=[]
+M6T=toc6 - tic6
 
-    # Recursively add the left and right subtrees
-    add_subtree(tree, nodes[:mid], root_id)
-    add_subtree(tree, nodes[mid+1:], root_id)
+# Print the results
+for result in result6:
+  M6+=[result]
+'''
 
-    return tree
+import random
 
-def add_subtree(tree, nodes, parent_id):
-    """
-    Recursively adds a subtree to the parent node.
-    """
-    if not nodes:
-        return
+class Node(object):
+    def __init__(self, val):
+        self.val = val # Query processing cost (block access)
+        self.time = 0 # Time to generate the materialized view
+        self.left = None
+        self.right = None
 
-    # Calculate the index of the middle element
-    mid = len(nodes) // 2
+class Tree:
+    # nodes is a list of nodes
+    def __init__(self, nodes):
+        self.root = self.build_balanced_min_heap(nodes)
 
-    # Add the middle element as a child node
-    child_id = nodes[mid]
-    child1 = tree.create_node(child_id, child_id, parent=parent_id)
+    # nodes is a list of nodes
+    def build_balanced_min_heap(self, nodes):
 
-    # Add data to node being added
-    node_metadata = set_metadata(mid, child_id)
-    child1.data = node_metadata
-
-    # Recursively add the left and right subtrees
-    add_subtree(tree, nodes[:mid], child_id)
-    add_subtree(tree, nodes[mid+1:], child_id)
-
-
-def find_optimal_node(tree):
-    
-    # Ensures we get a root
-    tree.root = tree.get_node(tree.root)
-    
-    # Initialize memoization table
-    memo = {}
-    min_cost_node = tree.root
-
-    # Define recursive function to find optimal node
-    def traverse(node, min_cost_node):
-
-        #print( "0. currently on node: " + str(node.identifier) + " , cost: " + str(node.data.cost))
-
-        # If node is None, stop
-        if node is None:
-            return None
-
-        # Base case: node is a leaf
-        if len(tree.children(node.identifier)) == 0:
-            return node
-
-        # Check if we've already computed the optimal node for this subtree
-        if node.identifier in memo:
-            return memo[node.identifier]
-
-        # Traverse all children of this node
-        for child_id in tree.children(node.identifier):
-            #print("-----------child_id is " + str(child_id.identifier))
-            child = tree.get_node(child_id.identifier)
-            #print("child is " + str(child.identifier) + " cost: " + str(child.data.cost))
-
-            # Recursively find the optimal node in the child subtree
-            current_child = traverse(child, min_cost_node)
-            #print("current child is " + str(current_child.identifier) + " cost: " + str(current_child.data.cost))
-
-            # Choose the node with the smallest sum of all the weights
-            if min_cost_node is None or (current_child.data.cost + current_child.data.size + current_child.data.frequency <= min_cost_node.data.cost + min_cost_node.data.size + min_cost_node.data.frequency):
-                min_cost_node = current_child
+      # Comparator function: prioritize smallest query processing cost, use mv generation time as tie-breaker
+      def comparator(node1, node2):
+          if node1.val < node2.val:
+              return node1.val < node2.val
+          elif node1.val == node2.val:
+              return node1.time < node2.time
         
-        # Memoize the result
-        memo[node.identifier] = min_cost_node
+      def build_tree(left, right):
+          if left > right:
+              return None
+          mid = (left + right) // 2
+          node = nodes[mid]
+          node.left = build_tree(left, mid - 1)
+          node.right = build_tree(mid + 1, right)
+          if node.left and comparator(node.left, node):
+              node.left, node = node, node.left
+          if node.right and comparator(node.right, node):
+              node.right, node = node, node.right
+          return node
+      return build_tree(0, len(nodes) - 1)
 
-        # Return the optimal node for this subtree
-        return min_cost_node
+    # Random Walk tree traversal algorithm
+    def random_walk(self):
+        node = self.root
+        while node:
+            if not node.left and not node.right:
+                break
+            if not node.left:
+                node = node.right
+            elif not node.right:
+                node = node.left
+            else:
+                node = node.left if random.random() < 0.5 else node.right
+        return node
 
-    # Call the recursive function on the root node
-    return traverse(tree.root, min_cost_node)
+# Get a list of all possible materialized views (mv) from a given a query
+# dynamically generate a list of all block access costs for each mv
+#block_access = [100, 10, 10, 20, 200, 500]
+block_access = []
+for i in range(10000):
+    rand_num = random.random()
+    block_access.append(rand_num)
 
-# Example usage -> RIGHT NOW ROOT IS OPTIMAL BECAUSE ALL WEIGHTS ARE 0
-# TODO: Connect to Oracle and get a list of all possible materialized views given a query
-nodes = ["MV1", "MV2", "MV3", "MV4", "MV5", "MV6"]
-tree = treelib.Tree()
-tree = create_balanced_tree(nodes)
-# Print out the tree
-tree.show()
+# dynamically generate a list for the mv generation time
+#build_time = [1.0, 0.33163536835702884, 0.07329126435033832, 0.0, 0.3230441724321448, 0.014445373679008592]#[M1T, M2T, M3T, M4T, M5T, M6T]
+build_time = []
+for i in range(10000):
+    rand_num = random.random()
+    build_time.append(rand_num)
 
-# Use dynamic programming to traverse the mv tree and find the optimal one
-optimal_node = find_optimal_node(tree)
-print("Optimal node: " + optimal_node.identifier)
+min_val = min(build_time)
+max_val = max(build_time)
 
-# TODO: After getting optimal mv from tree, execute query on MV and calculate execution time using Python timing library
-#       We need to compare runtimes with the ones in the paper
+# Normalize the values in the list
+normalized_build_time = list((x - min_val) / (max_val - min_val) for x in build_time)
+#print(normalized_build_time)
+
+# Generate a list of nodes to build the tree
+nodes = []
+for btime, access in zip(normalized_build_time, block_access):
+    node = Node(access)
+    node.time = btime
+    nodes.append(node)
+
+# Prints the nodes with their cost and time
+#for n in nodes:
+#    print("node has cost of " + str(n.val) + " and time of " + str(n.time))
+
+# Build tree to run the traversal algorithms on
+tree1 = Tree(nodes)
+
+# Get execution time of using min-heap to find the optimal mv
+tic2 = time()
+optimal_node = tree1.root
+toc2 = time()
+print('Min heap node: block access cost = ' + str(optimal_node.val) + ', query processing time is: ' + str(optimal_node.time) + ', execution time: ' + str(toc2 - tic2) + ' sec')
+
+# Get execution time of random walk algorithm to find the optimal mv
+tic = time()
+random_node = tree1.random_walk()
+toc = time()
+print('Random walk node: block access cost = ' + str(random_node.val) + ', query processing time is: ' + str(random_node.time) + ', execution time: ' + str(toc - tic) + ' sec')
