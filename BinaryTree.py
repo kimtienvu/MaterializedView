@@ -1,6 +1,6 @@
 # Authors: Kim Tien Vu, Jaskirat Singh Nandhra
 # Class: CS 666 - Distributed Systems
-# File description: This file defines several functions to create a balanced binary tree and a dynamic programming algorithm to find the node with the smallest size, frequency, and cost. 
+# File description: This file defines several functions to create a balanced binary tree and compares the execution time of running the random walk algorithm to using a min-heap to find the node with the optimal query processing cost. 
 #                   Input: List of materialized views of a given query
 #                   Output: Optimal materialized view
 
@@ -87,15 +87,17 @@ for result in result6:
 '''
 
 import random
+import copy
 
 class Node(object):
-    def __init__(self, val):
+    def __init__(self, id, val):
+        self.id = id
         self.val = val # Query processing cost (block access)
         self.time = 0 # Time to generate the materialized view
         self.left = None
         self.right = None
 
-class Tree:
+class MinHeap:
     # nodes is a list of nodes
     def __init__(self, nodes):
         self.root = self.build_balanced_min_heap(nodes)
@@ -124,6 +126,26 @@ class Tree:
           return node
       return build_tree(0, len(nodes) - 1)
 
+    
+class BST:
+    # nodes is a list of nodes
+    def __init__(self, nodes):
+        self.root = self.build_BST(nodes)
+    
+    # Binary search tree to run the random walk algorithm on
+    # nodes is a list of nodes
+    def build_BST(self, nodes):
+      if not nodes:
+          return None
+      
+      mid = len(nodes) // 2
+      root = nodes[mid]
+      
+      # Build the left and right subtrees recursively
+      root.left = self.build_BST(nodes[:mid])
+      root.right = self.build_BST(nodes[mid+1:])
+      return root
+    
     # Random Walk tree traversal algorithm
     def random_walk(self):
         node = self.root
@@ -142,14 +164,14 @@ class Tree:
 # dynamically generate a list of all block access costs for each mv
 #block_access = [100, 10, 10, 20, 200, 500]
 block_access = []
-for i in range(10000):
+for i in range(5):
     rand_num = random.random()
     block_access.append(rand_num)
 
 # dynamically generate a list for the mv generation time
 #build_time = [1.0, 0.33163536835702884, 0.07329126435033832, 0.0, 0.3230441724321448, 0.014445373679008592]#[M1T, M2T, M3T, M4T, M5T, M6T]
 build_time = []
-for i in range(10000):
+for i in range(5):
     rand_num = random.random()
     build_time.append(rand_num)
 
@@ -162,26 +184,34 @@ normalized_build_time = list((x - min_val) / (max_val - min_val) for x in build_
 
 # Generate a list of nodes to build the tree
 nodes = []
+index = 0
 for btime, access in zip(normalized_build_time, block_access):
-    node = Node(access)
+    node = Node(index, access)
     node.time = btime
     nodes.append(node)
+    index = index + 1
 
 # Prints the nodes with their cost and time
-#for n in nodes:
-#    print("node has cost of " + str(n.val) + " and time of " + str(n.time))
+for n in nodes:
+    print("node has cost of " + str(n.val) + " and time of " + str(n.time))
 
-# Build tree to run the traversal algorithms on
-tree1 = Tree(nodes)
+nodes_copy = copy.deepcopy(nodes)
+
+# Build min heap -> This is our contribution
+min_heap = MinHeap(nodes) # Min-heap will sort as nodes are inserted into tree
+
+# Sort in ascending index order for BST creation (for random walk later) -> based on paper algorithm
+sorted_nodes = sorted(nodes_copy, key=lambda node: node.id)
+bst = BST(sorted_nodes)
 
 # Get execution time of using min-heap to find the optimal mv
 tic2 = time()
-optimal_node = tree1.root
+optimal_node = min_heap.root
 toc2 = time()
 print('Min heap node: block access cost = ' + str(optimal_node.val) + ', query processing time is: ' + str(optimal_node.time) + ', execution time: ' + str(toc2 - tic2) + ' sec')
 
 # Get execution time of random walk algorithm to find the optimal mv
 tic = time()
-random_node = tree1.random_walk()
+random_node = bst.random_walk()
 toc = time()
 print('Random walk node: block access cost = ' + str(random_node.val) + ', query processing time is: ' + str(random_node.time) + ', execution time: ' + str(toc - tic) + ' sec')
