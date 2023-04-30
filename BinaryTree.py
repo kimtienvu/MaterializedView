@@ -1,8 +1,9 @@
 # Authors: Kim Tien Vu, Jaskirat Singh Nandhra
 # Class: CS 666 - Distributed Systems
-# File description: This file defines several functions to create a balanced binary tree and compares the execution time of running the random walk algorithm to using a min-heap to find the node with the optimal query processing cost. 
+# File description: This file defines several functions to create a balanced binary tree and compares the execution time of running the random walk algorithm to using a min-heap to find the node with the optimal query processing cost. See resources below to see how code was adapted for this project. 
 #                   Input: List of materialized views of a given query
 #                   Output: Optimal materialized view
+# Resources used: https://www.programiz.com/dsa/heap-data-structure, https://www.programiz.com/dsa/binary-search-tree
 
 #import mysql.connector
 from time import time
@@ -98,6 +99,7 @@ class Node(object):
         self.left = None
         self.right = None
 
+# code adapted from programiz. See resources at the top
 class MinHeap:
     # nodes is a list of nodes
     def __init__(self, nodes):
@@ -128,6 +130,7 @@ class MinHeap:
       return build_tree(0, len(nodes) - 1)
 
     
+# code adapted from programiz. See resources at the top
 class BST:
     # nodes is a list of nodes
     def __init__(self, nodes):
