@@ -7,6 +7,7 @@
 #import mysql.connector
 from time import time
 
+# Uncomment this if you have a mysql database connection, otherwise program will dynamically create random data to use
 '''
 mydb = mysql.connector.connect(
   host="localhost",
@@ -163,13 +164,16 @@ class BST:
 # Get a list of all possible materialized views (mv) from a given a query
 # dynamically generate a list of all block access costs for each mv
 #block_access = [100, 10, 10, 20, 200, 500]
+# NOTE THAT BLOCK ACCESS AND BUILD TIME LIST MUST BE THE SAME SIZE!!!
 block_access = []
+# The range can be higher than 5
 for i in range(5):
     rand_num = random.random()
     block_access.append(rand_num)
 
 # dynamically generate a list for the mv generation time
-#build_time = [1.0, 0.33163536835702884, 0.07329126435033832, 0.0, 0.3230441724321448, 0.014445373679008592]#[M1T, M2T, M3T, M4T, M5T, M6T]
+#build_time = [1.0, 0.33163536835702884, 0.07329126435033832, 0.0, 0.3230441724321448, 0.014445373679008592]
+# The range can be higher than 5
 build_time = []
 for i in range(5):
     rand_num = random.random()
@@ -208,10 +212,10 @@ bst = BST(sorted_nodes)
 tic2 = time()
 optimal_node = min_heap.root
 toc2 = time()
-print('Min heap node: block access cost = ' + str(optimal_node.val) + ', query processing time is: ' + str(optimal_node.time) + ', execution time: ' + str(toc2 - tic2) + ' sec')
+print('Min heap node: block access cost = ' + str(optimal_node.val) + ', execution time: ' + str(toc2 - tic2) + ' sec')
 
 # Get execution time of random walk algorithm to find the optimal mv
 tic = time()
 random_node = bst.random_walk()
 toc = time()
-print('Random walk node: block access cost = ' + str(random_node.val) + ', query processing time is: ' + str(random_node.time) + ', execution time: ' + str(toc - tic) + ' sec')
+print('Random walk node: block access cost = ' + str(random_node.val) + ', execution time: ' + str(toc - tic) + ' sec')
