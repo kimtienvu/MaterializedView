@@ -4,6 +4,7 @@ Project for CS 666 Advanced Distributed Systems by Kim Tien Vu & Jaskirat Singh 
 ## Dependencies:
 * MySQL database connection
 * Python 3
+* heapq library
 
 ## Compiling and running:
 * Execute `python3 BinaryTree.py` on the command line to run the code
