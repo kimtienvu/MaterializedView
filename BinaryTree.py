@@ -21,6 +21,7 @@ tic = time()
 mycursor.execute("SELECT name FROM 2011_rankings where scores_international_outlook > 20 ")
 results = mycursor.fetchall()
 toc = time()
+# print the results
 print('M1 ' + str(toc - tic))
 M1=[]
 M1T=toc - tic
@@ -164,19 +165,21 @@ class BST:
                 node = node.left if random.random() < 0.5 else node.right
         return node
 
-# Get a list of all possible materialized views (mv) from a given a query
-# dynamically generate a list of all block access costs for each mv
-#block_access = [100, 10, 10, 20, 200, 500]
+# Step 1: Get a list of all possible materialized views (mv) from a given a query
+# Step 1a: Get the block access cost of all possible materialized views. It is measured in terms of the number of records in the materialized view.
+# Use this line on 172 if using MySQL database connection: block_access = [len(M1),len(M2),len(M3),len(M4),len(M5),len(M6)]
+# Otherwise can still test by dynamically generating a list of all block access costs for each mv
 # NOTE THAT BLOCK ACCESS AND BUILD TIME LIST MUST BE THE SAME SIZE!!!
 block_access = []
-# The range can be higher than 5
+# The range can be higher than 5, it represents the number of materialized views
 for i in range(5):
     rand_num = random.random()
     block_access.append(rand_num)
 
+# Step 1b: Get the build time of all possible materialized views. This will be the tie-breaker if the block access costs are the same.
+# Use this line on 172 if using MySQL database connection: build_time = [M1T, M2T, M3T, M4T, M5T, M6T]
 # dynamically generate a list for the mv generation time
-#build_time = [1.0, 0.33163536835702884, 0.07329126435033832, 0.0, 0.3230441724321448, 0.014445373679008592]
-# The range can be higher than 5
+# The range can be higher than 5, it represents the number of materialized views
 build_time = []
 for i in range(5):
     rand_num = random.random()
@@ -189,7 +192,7 @@ max_val = max(build_time)
 normalized_build_time = list((x - min_val) / (max_val - min_val) for x in build_time)
 #print(normalized_build_time)
 
-# Generate a list of nodes to build the tree
+# Step 2: Generate a list of nodes to build the tree
 nodes = []
 index = 0
 for btime, access in zip(normalized_build_time, block_access):
@@ -198,27 +201,28 @@ for btime, access in zip(normalized_build_time, block_access):
     nodes.append(node)
     index = index + 1
 
-# Prints the nodes with their cost and time
-for n in nodes:
-    print("node has cost of " + str(n.val) + " and time of " + str(n.time))
+# Prints the nodes with their cost and time. Uncomment if you want to see them.
+#for n in nodes:
+#    print("node has cost of " + str(n.val) + " and time of " + str(n.time))
 
 nodes_copy = copy.deepcopy(nodes)
 
-# Build min heap -> This is our contribution
+# Step 3: Build min heap -> This is our contribution
 min_heap = MinHeap(nodes) # Min-heap will sort as nodes are inserted into tree
 
-# Sort in ascending index order for BST creation (for random walk later) -> based on paper algorithm
+# Step 4: Replicate existing solution. Sort nodes in ascending index order for BST creation (for random walk later) 
 sorted_nodes = sorted(nodes_copy, key=lambda node: node.id)
 bst = BST(sorted_nodes)
 
+# Step 5: Compare execution times of our approach (min-heap) vs. BST with Random walk existing solution.
 # Get execution time of using min-heap to find the optimal mv
 tic2 = time()
 optimal_node = min_heap.root
 toc2 = time()
-print('Min heap node: block access cost = ' + str(optimal_node.val) + ', execution time: ' + str(toc2 - tic2) + ' sec')
+print('Min heap optimal node: block access cost = ' + str(optimal_node.val) + ', execution time: ' + str(toc2 - tic2) + ' sec')
 
 # Get execution time of random walk algorithm to find the optimal mv
 tic = time()
 random_node = bst.random_walk()
 toc = time()
-print('Random walk node: block access cost = ' + str(random_node.val) + ', execution time: ' + str(toc - tic) + ' sec')
+print('Random walk optimal node: block access cost = ' + str(random_node.val) + ', execution time: ' + str(toc - tic) + ' sec')
