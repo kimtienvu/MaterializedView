@@ -3,7 +3,7 @@
 # File description: This file defines several functions to create a balanced binary tree and compares the execution time of running the random walk algorithm to using a min-heap to find the node with the optimal query processing cost. See resources below to see how code was adapted for this project. 
 #                   Input: List of materialized views of a given query
 #                   Output: Optimal materialized view
-# Resources used: https://www.programiz.com/dsa/heap-data-structure, https://www.programiz.com/dsa/binary-search-tree
+# Resources used: https://www.programiz.com/dsa/heap-data-structure, https://www.programiz.com/dsa/binary-search-tree, https://docs.python.org/3/library/heapq.html
 
 #import mysql.connector
 from time import time
@@ -91,6 +91,7 @@ for result in result6:
 
 import random
 import copy
+import heapq # You may need to install this dependency
 
 class Node(object):
     def __init__(self, id, val):
@@ -100,38 +101,18 @@ class Node(object):
         self.left = None
         self.right = None
 
-# code adapted from programiz. See resources at the top
-class MinHeap:
-    # nodes is a list of nodes
-    def __init__(self, nodes):
-        self.root = self.build_balanced_min_heap(nodes)
-
-    # nodes is a list of nodes
-    def build_balanced_min_heap(self, nodes):
-
-      # Comparator function: prioritize smallest query processing cost, use mv generation time as tie-breaker
-      def comparator(node1, node2):
-          if node1.val < node2.val:
-              return node1.val < node2.val
-          elif node1.val == node2.val:
-              return node1.time < node2.time
-        
-      def build_tree(left, right):
-          if left > right:
-              return None
-          mid = (left + right) // 2
-          node = nodes[mid]
-          node.left = build_tree(left, mid - 1)
-          node.right = build_tree(mid + 1, right)
-          if node.left and comparator(node.left, node):
-              node.left, node = node, node.left
-          if node.right and comparator(node.right, node):
-              node.right, node = node, node.right
-          return node
-      return build_tree(0, len(nodes) - 1)
-
+    def __lt__(self, other):
+        if self.val < other.val:
+            return True
+        elif self.val == other.val:
+            return self.time < other.time
+        else:
+            return False
     
-# code adapted from programiz. See resources at the top
+    def __repr__(self):
+        return str(self.val)
+    
+# Code adapted from programiz. See resources at the top
 class BST:
     # nodes is a list of nodes
     def __init__(self, nodes):
@@ -171,7 +152,7 @@ class BST:
 # Otherwise can still test by dynamically generating a list of all block access costs for each mv
 # NOTE THAT BLOCK ACCESS AND BUILD TIME LIST MUST BE THE SAME SIZE!!!
 block_access = []
-# The range can be higher than 100000, it represents the number of materialized views
+# The range can be higher than 100000, it represents the number of materialized views. This number needs to be the same size as build_time!
 for i in range(100000):
     rand_num = random.randint(1, 100)
     block_access.append(rand_num)
@@ -179,7 +160,7 @@ for i in range(100000):
 # Step 1b: Get the build time of all possible materialized views. This will be the tie-breaker if the block access costs are the same.
 # Use this line on 1783 and comment out the for loop on lines 183-186 on if using MySQL database connection: build_time = [M1T, M2T, M3T, M4T, M5T, M6T]
 # dynamically generate a list for the mv generation time
-# The range can be higher than 5, it represents the number of materialized views
+# The range can be higher than 100000, it represents the number of materialized views. This number needs to be the same size as block_access!
 build_time = []
 for i in range(100000):
     rand_num = random.randint(1, 100)
@@ -208,8 +189,7 @@ for btime, access in zip(normalized_build_time, block_access):
 nodes_copy = copy.deepcopy(nodes)
 
 # Step 3: Build min heap -> This is our contribution
-sorted_cost_nodes = sorted(nodes, key=lambda node: node.val)
-min_heap = MinHeap(nodes) # Min-heap will sort as nodes are inserted into tree
+heapq.heapify(nodes)
 
 # Step 4: Replicate existing solution. Sort nodes in ascending index order for BST creation (for random walk later) 
 sorted_nodes = sorted(nodes_copy, key=lambda node: node.id)
@@ -217,13 +197,13 @@ bst = BST(sorted_nodes)
 
 # Step 5: Compare execution times of our approach (min-heap) vs. BST with Random walk existing solution.
 # Get execution time of using min-heap to find the optimal mv
-tic2 = time()
-optimal_node = min_heap.root
-toc2 = time()
-print('Min heap optimal node: block access cost = ' + str(optimal_node.val) + ', execution time: ' + str(toc2 - tic2) + ' sec')
+min_tic = time()
+optimal_node = nodes[0]
+min_toc = time()
+print('Min heap optimal node: block access cost = ' + str(optimal_node.val) + ', execution time: ' + str(min_toc - min_tic) + ' sec')
 
 # Get execution time of random walk algorithm to find the optimal mv
-tic = time()
+time_random_walk_start = time()
 random_node = bst.random_walk()
-toc = time()
-print('Random walk optimal node: block access cost = ' + str(random_node.val) + ', execution time: ' + str(toc - tic) + ' sec')
+time_random_walk_end = time()
+print('Random walk optimal node: block access cost = ' + str(random_node.val) + ', execution time: ' + str(time_random_walk_end - time_random_walk_start) + ' sec')
