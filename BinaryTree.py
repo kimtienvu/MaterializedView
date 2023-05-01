@@ -167,22 +167,22 @@ class BST:
 
 # Step 1: Get a list of all possible materialized views (mv) from a given a query
 # Step 1a: Get the block access cost of all possible materialized views. It is measured in terms of the number of records in the materialized view.
-# Use this line on 172 if using MySQL database connection: block_access = [len(M1),len(M2),len(M3),len(M4),len(M5),len(M6)]
+# Use this line on 172 and comment out the for loop on lines 173-177 if using MySQL database connection: block_access = [len(M1),len(M2),len(M3),len(M4),len(M5),len(M6)]
 # Otherwise can still test by dynamically generating a list of all block access costs for each mv
 # NOTE THAT BLOCK ACCESS AND BUILD TIME LIST MUST BE THE SAME SIZE!!!
 block_access = []
-# The range can be higher than 5, it represents the number of materialized views
-for i in range(5):
-    rand_num = random.random()
+# The range can be higher than 100000, it represents the number of materialized views
+for i in range(100000):
+    rand_num = random.randint(1, 100)
     block_access.append(rand_num)
 
 # Step 1b: Get the build time of all possible materialized views. This will be the tie-breaker if the block access costs are the same.
-# Use this line on 172 if using MySQL database connection: build_time = [M1T, M2T, M3T, M4T, M5T, M6T]
+# Use this line on 1783 and comment out the for loop on lines 183-186 on if using MySQL database connection: build_time = [M1T, M2T, M3T, M4T, M5T, M6T]
 # dynamically generate a list for the mv generation time
 # The range can be higher than 5, it represents the number of materialized views
 build_time = []
-for i in range(5):
-    rand_num = random.random()
+for i in range(100000):
+    rand_num = random.randint(1, 100)
     build_time.append(rand_num)
 
 min_val = min(build_time)
@@ -208,6 +208,7 @@ for btime, access in zip(normalized_build_time, block_access):
 nodes_copy = copy.deepcopy(nodes)
 
 # Step 3: Build min heap -> This is our contribution
+sorted_cost_nodes = sorted(nodes, key=lambda node: node.val)
 min_heap = MinHeap(nodes) # Min-heap will sort as nodes are inserted into tree
 
 # Step 4: Replicate existing solution. Sort nodes in ascending index order for BST creation (for random walk later) 
